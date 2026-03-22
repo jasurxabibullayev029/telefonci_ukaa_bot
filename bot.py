@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8746729342:AAHfL47fiRjWCwXq1fVS5CmNVsSw2mGAwLw"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8746729342:AAGpjtx3rlZ_KOmp9KST1J0i7Lm8gpltQLA"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
 CHANNEL_USERNAME = "jasurdvv"
@@ -1305,8 +1305,6 @@ def init_db():
         )
     ''')
     
-    # Eski o'yinlarni tozalash
-    cursor.execute("DELETE FROM games")
     conn.commit()
     conn.close()
 
