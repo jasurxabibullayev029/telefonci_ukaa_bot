@@ -330,10 +330,7 @@ async def start_command(message: Message):
     await message.answer(
         "👋 Assalomu alaykum! O'yinlar yuklash botiga xush kelibsiz!\n\n"
         "🎮 Bu bot orqali siz turli xil o'yinlarni yuklab olishingiz mumkin.\n"
-        "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.\n\n"
-        "🎬 **Yangi kanalga obuna bo'lishni xohlaysizmi?**\n"
-        f"📺 {NEW_CHANNEL_USERNAME} kanaliga avtomatik ariza yuborish uchun:\n"
-        f"/ariza_sweet_home komandasini yuboring!",
+        "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.",
         reply_markup=await get_gta_keyboard()
     )
 
