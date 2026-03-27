@@ -11,10 +11,10 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8746729342:AAGpjtx3rlZ_KOmp9KST1J0i7Lm8gpltQLA"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8746729342:AAG3v_Kjwpe2I7Vb9--bp7m3pHy51_dGR6c"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
-CHANNEL_USERNAME = "jasurdvv"
+CHANNEL_USERNAME = "iPhone_Lifee"
 CHANNEL_USERNAME_2 = "telefonci_ukaa"
 
 # Admin Telegram user ID lari (@userinfobot orqali tekshiring)
