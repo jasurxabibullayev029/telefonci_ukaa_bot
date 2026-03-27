@@ -11,11 +11,12 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8746729342:AAG3v_Kjwpe2I7Vb9--bp7m3pHy51_dGR6c"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8746729342:AAGHRF02-qpYA0GzXwH77rPOeC8k4qE0kI8"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
-CHANNEL_USERNAME = "iPhone_Lifee"
-CHANNEL_USERNAME_2 = "telefonci_ukaa"
+CHANNEL_USERNAME = "telefonci_ukaa"
+NEW_CHANNEL_USERNAME = "SWEET HOME🛍️"  # Yangi kanal uchun
+NEW_CHANNEL_LINK = "https://t.me/+rlvRV9gi0MUyMjYy"  # Taklif linki
 
 # Admin Telegram user ID lari (@userinfobot orqali tekshiring)
 ADMIN_IDS = {1209491758}
@@ -32,11 +33,58 @@ dp = Dispatcher()
 # Kanalga obuna bo'lish tugmasi
 async def get_channel_keyboard():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📺 1-kanalga obuna bo'lish", url=f"https://t.me/{CHANNEL_USERNAME}")],
-        [InlineKeyboardButton(text="📺 2-kanalga obuna bo'lish", url=f"https://t.me/{CHANNEL_USERNAME_2}")],
+        [InlineKeyboardButton(text="📺 Kanalga obuna bo'lish", url=f"https://t.me/{CHANNEL_USERNAME}")],
+        [InlineKeyboardButton(text="🎬 SWEET HOME🛍️ ga obuna bo'lish", url=NEW_CHANNEL_LINK)],
         [InlineKeyboardButton(text="✅ Obunani tekshirish", callback_data="check_subscription")]
     ])
     return keyboard
+
+# Yangi kanal uchun ariza qabul qilish
+async def handle_new_channel_request(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "username yo'q"
+    first_name = message.from_user.first_name or "ism yo'q"
+    
+    # Adminlarga xabar yuborish
+    admin_text = f"""
+🆕 **Yangi kanalga ariza!**
+
+👤 **Foydalanuvchi ma'lumotlari:**
+🆔 ID: {user_id}
+👤 Username: @{username}
+📝 Ismi: {first_name}
+
+📺 **Kanal:** {NEW_CHANNEL_USERNAME}
+🔗 **Taklif linki:** {NEW_CHANNEL_LINK}
+
+⏰ **Vaqt:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+---
+🎯 **Avtomatik ariza qabul qilish tizimi**
+    """
+    
+    # Adminlarga xabar yuborish
+    for admin_id in ADMIN_IDS:
+        try:
+            await bot.send_message(
+                chat_id=admin_id,
+                text=admin_text,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="✅ Qabul qilish", callback_data=f"approve_request_{user_id}")],
+                    [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"reject_request_{user_id}")],
+                    [InlineKeyboardButton(text="👤 Foydalanuvchiga yozish", url=f"https://t.me/{username}")]
+                ])
+            )
+        except Exception as e:
+            print(f"Adminga xabar yuborish xatoligi: {e}")
+    
+    # Foydalanuvchiga javob
+    await message.answer(
+        "✅ **Ariza yuborildi!**\n\n"
+        "📝 Sizning arizangiz adminlarga yuborildi.\n"
+        "👑 Adminlar ko'rib chiqib, tez orada javob berishadi.\n\n"
+        "⏳ Iltimos, biroz kutib turing..."
+    )
 
 # Oyinlar yuklash tugmalari (database dan dinamik)
 async def get_gta_keyboard():
@@ -67,6 +115,185 @@ async def get_gta_keyboard():
         return InlineKeyboardMarkup(inline_keyboard=[])
     finally:
         conn.close()
+
+# Ariza qabul qilish callback
+@dp.callback_query(F.data.startswith("approve_request_"))
+async def approve_request_callback(callback: types.CallbackQuery):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer("🚫 Siz admin emassiz!", show_alert=True)
+        return
+    
+    # User ID ni olish
+    user_id = int(callback.data.split("_")[-1])
+    
+    try:
+        # Foydalanuvchiga xabar yuborish
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"""
+✅ **Arizangiz qabul qilindi!** 
+
+🎉 Tabriklaymiz! Siz {NEW_CHANNEL_USERNAME} kanaliga qo'shildingiz.
+
+📺 **Kanal:** {NEW_CHANNEL_USERNAME}
+🔗 **Kanalga o'tish:** {NEW_CHANNEL_LINK}
+
+🎯 **Endi siz:**
+• Kanaldagi barcha kinolarni tomosha qilishingiz mumkin
+• Yangi kinolardan xabardor bo'lasiz
+• Boshqa a'zolar bilan suhbat qurishingiz mumkin
+
+🙏 **Kanalga tashrifingiz uchun rahmat!**
+            """
+        )
+        
+        # Adminga xabar
+        await callback.message.edit_text(
+            f"✅ **Ariza qabul qilindi!**\n\n"
+            f"👤 Foydalanuvchi ID: {user_id}\n"
+            f"📺 Kanal: {NEW_CHANNEL_USERNAME}\n"
+            f"⏰ Vaqt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        await callback.answer("✅ Ariza qabul qilindi!", show_alert=True)
+        
+    except Exception as e:
+        print(f"Ariza qabul qilish xatoligi: {e}")
+        await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
+
+# Fayl yuborish callback (admin uchun)
+@dp.callback_query(F.data.startswith("send_file_"))
+async def send_file_callback(callback: types.CallbackQuery):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer("🚫 Siz admin emassiz!", show_alert=True)
+        return
+    
+    # User ID ni olish
+    user_id = int(callback.data.split("_")[-1])
+    
+    try:
+        # Foydalanuvchiga fayl yuborish
+        await bot.send_document(
+            chat_id=user_id,
+            document="BAACAgUAAxkDAAICOGF6i2b3Jt8nG8kVjvY7K6r8AAKqCAAJfGxkS2kqL8X7Y9v8BA",
+            caption="🎮 Grand Theft Auto V\n\n"
+                   "📥 Fayl muvaffaqiyatli yuklandi!\n"
+                   "🔧 O'yinni o'rnatish uchun arxivni oching.\n\n"
+                   "🎬 O'yinni o'rnatish bo'yicha video:\n"
+                   "🔗 https://youtu.be/ojvZgPs2YFo\n\n"
+                   "✅ **Arizangiz tasdiqlandi!**\n"
+                   f"📺 {NEW_CHANNEL_USERNAME} kanaliga obuna bo'lganingiz uchun rahmat!"
+        )
+        
+        # Adminga xabar
+        await callback.message.edit_text(
+            f"✅ **Fayl yuborildi!**\n\n"
+            f"👤 Foydalanuvchi ID: {user_id}\n"
+            f"🎮 O'yin: GTA 5\n"
+            f"📺 Kanal: {NEW_CHANNEL_USERNAME}\n"
+            f"⏰ Vaqt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        await callback.answer("✅ Fayl yuborildi!", show_alert=True)
+        
+    except Exception as e:
+        print(f"Fayl yuborish xatoligi: {e}")
+        await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
+
+# Fayl rad etish callback (admin uchun)
+@dp.callback_query(F.data.startswith("reject_file_"))
+async def reject_file_callback(callback: types.CallbackQuery):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer("🚫 Siz admin emassiz!", show_alert=True)
+        return
+    
+    # User ID ni olish
+    user_id = int(callback.data.split("_")[-1])
+    
+    try:
+        # Foydalanuvchiga xabar yuborish
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"""
+❌ **Arizangiz rad etildi!**
+
+😔 Kechirasiz, sizning arizangiz {NEW_CHANNEL_USERNAME} kanaliga fayl olish uchun rad etildi.
+
+📝 **Sabab:** Adminlar tomonidan ko'rib chiqilgandan so'ng rad etildi.
+
+🔄 **Qayta urinish:**
+• Kanalga to'liq obuna bo'ling
+• Yoki admin bilan bog'laning
+
+📞 **Admin bilan bog'lanish:**
+• @admin_username yozing
+• Yoki boshqa usul bilan aloqa qiling
+
+🙏 **Tushunishingiz uchun rahmat!**
+            """
+        )
+        
+        # Adminga xabar
+        await callback.message.edit_text(
+            f"❌ **Ariza rad etildi!**\n\n"
+            f"👤 Foydalanuvchi ID: {user_id}\n"
+            f"🎮 O'yin: GTA 5\n"
+            f"📺 Kanal: {NEW_CHANNEL_USERNAME}\n"
+            f"⏰ Vaqt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        await callback.answer("❌ Ariza rad etildi!", show_alert=True)
+        
+    except Exception as e:
+        print(f"Ariza rad etish xatoligi: {e}")
+        await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
+
+# Ariza rad etish callback
+@dp.callback_query(F.data.startswith("reject_request_"))
+async def reject_request_callback(callback: types.CallbackQuery):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer("🚫 Siz admin emassiz!", show_alert=True)
+        return
+    
+    # User ID ni olish
+    user_id = int(callback.data.split("_")[-1])
+    
+    try:
+        # Foydalanuvchiga xabar yuborish
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"""
+❌ **Arizangiz rad etildi!**
+
+😔 Kechirasiz, sizning arizangiz {NEW_CHANNEL_USERNAME} kanaliga qo'shilish uchun rad etildi.
+
+📝 **Sabab:** Adminlar tomonidan ko'rib chiqilgandan so'ng rad etildi.
+
+🔄 **Qayta urinish:**
+• Agar xatolik bo'lsa, admin bilan bog'laning
+• Yoki keyinroq qayta ariza yuboring
+
+📞 **Admin bilan bog'lanish:**
+• @admin_username yozing
+• Yoki boshqa usul bilan aloqa qiling
+
+🙏 **Tushunishingiz uchun rahmat!**
+            """
+        )
+        
+        # Adminga xabar
+        await callback.message.edit_text(
+            f"❌ **Ariza rad etildi!**\n\n"
+            f"👤 Foydalanuvchi ID: {user_id}\n"
+            f"📺 Kanal: {NEW_CHANNEL_USERNAME}\n"
+            f"⏰ Vaqt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        await callback.answer("❌ Ariza rad etildi!", show_alert=True)
+        
+    except Exception as e:
+        print(f"Ariza rad etish xatoligi: {e}")
+        await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
 
 # /start komandasi
 @dp.message(CommandStart())
@@ -103,9 +330,30 @@ async def start_command(message: Message):
     await message.answer(
         "👋 Assalomu alaykum! O'yinlar yuklash botiga xush kelibsiz!\n\n"
         "🎮 Bu bot orqali siz turli xil o'yinlarni yuklab olishingiz mumkin.\n"
-        "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.",
+        "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.\n\n"
+        "🎬 **Yangi kanalga obuna bo'lishni xohlaysizmi?**\n"
+        f"📺 {NEW_CHANNEL_USERNAME} kanaliga avtomatik ariza yuborish uchun:\n"
+        f"/ariza_sweet_home komandasini yuboring!",
         reply_markup=await get_gta_keyboard()
     )
+
+# Yangi kanal uchun ariza komandasi
+@dp.message(F.text.startswith("/ariza_"))
+async def channel_request_command(message: Message):
+    # Kanal nomini olish
+    command_parts = message.text.split("_", 1)
+    channel_name = command_parts[1] if len(command_parts) > 1 else ""
+    
+    # SWEET HOME🛍️ ni tekshirish (case-insensitive)
+    if "sweet" in channel_name.lower() and "home" in channel_name.lower():
+        await handle_new_channel_request(message)
+    else:
+        await message.answer(
+            "❌ **Noto'g'ri kanal nomi!**\n\n"
+            f"📺 To'g'ri kanal: {NEW_CHANNEL_USERNAME}\n"
+            f"🔗 Taklif linki: {NEW_CHANNEL_LINK}\n\n"
+            f"📝 To'g'ri ariza uchun: /ariza_sweet_home"
+        )
 
 # Fayl ID ni kodga avtomatik yozish
 async def write_file_id_to_code(game_name, file_id):
@@ -961,13 +1209,11 @@ async def download_game_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
-        bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
-        print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
-        print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
+        bot_is_admin = bot_info.status in ["administrator", "creator"]
+        print(f"Bot kanalda admin: {bot_info.status in ['administrator', 'creator']}")
     except:
         bot_is_admin = False
-        print("Bot kanallarda emas yoki admin emas")
+        print("Bot kanalda emas yoki admin emas")
     
     if not bot_is_admin:
         # Bot admin bo'lmasa, to'g'ridan-to'g'ri yechim taklif qilamiz
@@ -975,7 +1221,7 @@ async def download_game_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} kanaliga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta '{game_name}ni yuklash' tugmasini bosing.",
@@ -985,7 +1231,7 @@ async def download_game_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} kanaliga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta '{game_name}ni yuklash' tugmasini bosing.",
@@ -1000,15 +1246,10 @@ async def download_game_callback(callback: types.CallbackQuery):
             chat_id=f"@{CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
-        chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
-            user_id=callback.from_user.id
-        )
         
-        print(f"User {callback.from_user.id} 1-kanal status: {chat_member.status}")
-        print(f"User {callback.from_user.id} 2-kanal status: {chat_member2.status}")
+        print(f"User {callback.from_user.id} kanal status: {chat_member.status}")
         
-        if chat_member.status in ["member", "administrator", "creator"] and chat_member2.status in ["member", "administrator", "creator"]:
+        if chat_member.status in ["member", "administrator", "creator"]:
             # Obuna bo'lgan bo'lsa, faylni yuboramiz
             conn = sqlite3.connect('bot.db')
             cursor = conn.cursor()
@@ -1044,35 +1285,41 @@ async def download_game_callback(callback: types.CallbackQuery):
                     )
                 else:
                     await callback.message.edit_text(
-                        f"❌ {game_name} fayli topilmadi!\n\n"
-                        "📞 Iltimos, admin bilan bog'laning."
+                        f"❌ {game_name} fayli hali yuklanmagan!\n\n"
+                        "🎮 **Nima qilish kerak:**\n"
+                        "• Admin bilan bog'laning\n"
+                        "• Yoki biroz kutib, keyin urinib ko'ring\n\n"
+                        "📞 Admin tez orada faylni yuklaydi."
                     )
-                    await callback.answer("❌ Fayl topilmadi!", show_alert=True)
+                    await callback.answer("❌ Fayl hali yuklanmagan!", show_alert=True)
                     
             except Exception as file_error:
                 print(f"{game_name} faylini yuborish xatoligi: {file_error}")
                 await callback.message.edit_text(
-                    f"❌ {game_name} faylini yuklab bo'lmadi.\n\n"
-                    "📞 Iltimos, admin bilan bog'laning:\n"
-                    f"🔗 https://t.me/{CHANNEL_USERNAME}"
+                    f"❌ {game_name} faylini yuklashda xatolik yuz berdi!\n\n"
+                    "🎮 **Nima qilish kerak:**\n"
+                    "• Qayta urinib ko'ring\n"
+                    "• Yoki admin bilan bog'laning\n\n"
+                    "� Admin tez orada muammoni hal qiladi."
                 )
+                await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             finally:
                 conn.close()
         else:
             # Obuna bo'lmagan bo'lsa, obuna bo'lishni so'raymiz
             try:
                 await callback.message.edit_text(
-                    f"❗️ {game_name}ni yuklash uchun avval ikkala kanalga obuna bo'ling!\n\n"
-                    "📺 Ikkala kanalga ham obuna bo'ling va keyin 'Obunani tekshirish' tugmasini bosing.",
+                    f"❗️ {game_name}ni yuklash uchun avval kanalga obuna bo'ling!\n\n"
+                    "📺 Kanalga obuna bo'ling va keyin 'Obunani tekshirish' tugmasini bosing.",
                     reply_markup=await get_channel_keyboard()
                 )
             except:
                 await callback.message.answer(
-                    f"❗️ {game_name}ni yuklash uchun avval ikkala kanalga obuna bo'ling!\n\n"
-                    "📺 Ikkala kanalga ham obuna bo'ling va keyin 'Obunani tekshirish' tugmasini bosing.",
+                    f"❗️ {game_name}ni yuklash uchun avval kanalga obuna bo'ling!\n\n"
+                    "📺 Kanalga obuna bo'ling va keyin 'Obunani tekshirish' tugmasini bosing.",
                     reply_markup=await get_channel_keyboard()
                 )
-            await callback.answer("❗️ Avval ikkala kanalga obuna bo'ling!")
+            await callback.answer("❗️ Avval kanalga obuna bo'ling!")
             
     except Exception as e:
         print(f"{game_name} download callback xatoligi: {e}")
@@ -1084,13 +1331,11 @@ async def check_subscription_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
-        bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
-        print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
-        print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
+        bot_is_admin = bot_info.status in ["administrator", "creator"]
+        print(f"Bot kanalda admin: {bot_info.status in ['administrator', 'creator']}")
     except:
         bot_is_admin = False
-        print("Bot kanallarda emas yoki admin emas")
+        print("Bot kanalda emas yoki admin emas")
     
     if not bot_is_admin:
         # Bot admin bo'lmasa, to'g'ridan-to'g'ri yechim taklif qilamiz
@@ -1123,15 +1368,10 @@ async def check_subscription_callback(callback: types.CallbackQuery):
             chat_id=f"@{CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
-        chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
-            user_id=callback.from_user.id
-        )
         
-        print(f"User {callback.from_user.id} 1-kanal status: {chat_member.status}")
-        print(f"User {callback.from_user.id} 2-kanal status: {chat_member2.status}")
+        print(f"User {callback.from_user.id} kanal status: {chat_member.status}")
         
-        if chat_member.status in ["member", "administrator", "creator"] and chat_member2.status in ["member", "administrator", "creator"]:
+        if chat_member.status in ["member", "administrator", "creator"]:
             # Obuna bo'lgan bo'lsa, faylni yuboramiz
             try:
                 # Faylni yuborish
@@ -1154,39 +1394,134 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                 )
             except Exception as file_error:
                 print(f"Fayl yuborish xatoligi: {file_error}")
-                # Agar fayl yuklab bo'lmasa, xatolik haqida xabar beramiz
+                # Xatolik bo'lsa, to'g'ridan-to'g'ri faylni yuboramiz
                 try:
+                    await bot.send_document(
+                        chat_id=callback.from_user.id,
+                        document="BAACAgUAAxkDAAICOGF6i2b3Jt8nG8kVjvY7K6r8AAKqCAAJfGxkS2kqL8X7Y9v8BA",  # Grand Theft Auto V.zip to'g'ri file_id
+                        caption="🎮 Grand Theft Auto V\n\n"
+                               "📥 Fayl muvaffaqiyatli yuklandi!\n"
+                               "🔧 O'yinni o'rnatish uchun arxivni oching.\n\n"
+                               "🎬 O'yinni o'rnatish bo'yicha video:\n"
+                               "🔗 https://youtu.be/ojvZgPs2YFo"
+                    )
+                    
+                    print(f"Fayl to'g'ridan-to'g'ri yuborildi user {callback.from_user.id} ga")
+                    
+                    # Xabarni o'zgartiramiz
                     await callback.message.edit_text(
-                        "❌ Faylni yuklab bo'lmadi.\n\n"
-                        "📞 Iltimos, admin bilan bog'laning:\n"
-                        f"🔗 https://t.me/{CHANNEL_USERNAME}"
+                        "✅ Siz kanalga muvaffaqiyatli obuna bo'ldingiz!\n\n"
+                        "📥 GTA 5 fayli yuborildi!"
                     )
-                except:
-                    await callback.message.answer(
-                        "❌ Faylni yuklab bo'lmadi.\n\n"
-                        "� Iltimos, admin bilan bog'laning:\n"
-                        f"🔗 https://t.me/{CHANNEL_USERNAME}"
-                    )
-            await callback.answer("✅ Obuna tasdiqlandi!")
+                    await callback.answer("✅ Fayl yuborildi!")
+                except Exception as direct_error:
+                    print(f"To'g'ridan-to'g'ri yuborish xatoligi: {direct_error}")
+                    # Agar to'g'ridan-to'g'ri ham yuborib bo'lmasa
+                    try:
+                        await callback.message.edit_text(
+                            "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
+                            "🎮 **Nima qilish kerak:**\n"
+                            "• Qayta urinib ko'ring\n"
+                            "• Yoki admin bilan bog'laning\n\n"
+                            "� Admin tez orada muammoni hal qiladi."
+                        )
+                    except:
+                        await callback.message.answer(
+                            "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
+                            "🎮 **Nima qilish kerak:**\n"
+                            "• Qayta urinib ko'ring\n"
+                            "• Yoki admin bilan bog'laning\n\n"
+                            "� Admin tez orada muammoni hal qiladi."
+                        )
+                    await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
         else:
-            # Obuna bo'lmagan bo'lsa
+            # Obuna bo'lmagan bo'lsa, avval SWEET HOME🛍️ kanaliga ariza yuboramiz
             try:
+                # SWEET HOME🛍️ kanaliga ariza yuborish
+                user_id = callback.from_user.id
+                username = callback.from_user.username or "username yo'q"
+                first_name = callback.from_user.first_name or "ism yo'q"
+                
+                # Adminlarga xabar yuborish
+                admin_text = f"""
+🆕 **Fayl yuklash uchun ariza!**
+
+👤 **Foydalanuvchi ma'lumotlari:**
+🆔 ID: {user_id}
+👤 Username: @{username}
+📝 Ismi: {first_name}
+
+🎮 **O'yin:** GTA 5
+📺 **Kanal:** {NEW_CHANNEL_USERNAME}
+🔗 **Taklif linki:** {NEW_CHANNEL_LINK}
+
+⏰ **Vaqt:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+---
+🎯 **Fayl yuklash uchun ariza qabul qilish tizimi**
+                """
+                
+                # Adminlarga xabar yuborish
+                for admin_id in ADMIN_IDS:
+                    try:
+                        await bot.send_message(
+                            chat_id=admin_id,
+                            text=admin_text,
+                            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                [InlineKeyboardButton(text="✅ Faylni yuborish", callback_data=f"send_file_{user_id}")],
+                                [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"reject_file_{user_id}")],
+                                [InlineKeyboardButton(text="� Foydalanuvchiga yozish", url=f"https://t.me/{username}")]
+                            ])
+                        )
+                    except Exception as e:
+                        print(f"Adminga xabar yuborish xatoligi: {e}")
+                
+                # Foydalanuvchiga javob
                 await callback.message.edit_text(
-                    "❌ Siz hali kanalga obuna bo'lmagansiz!\n\n"
-                    "📺 Iltimos, kanalga obuna bo'ling:\n"
-                    f"🔗 https://t.me/{CHANNEL_USERNAME}\n\n"
-                    "Obuna bo'lgach, qayta 'Obunani tekshirish' tugmasini bosing.",
-                    reply_markup=await get_channel_keyboard()
+                    "📋 **Ariza yuborildi!**\n\n"
+                    f"🎮 Siz {NEW_CHANNEL_USERNAME} kanaliga ariza yubordingiz.\n\n"
+                    "📝 **Nima qilish kerak:**\n"
+                    "• Kanalga obuna bo'ling: " + NEW_CHANNEL_LINK + "\n"
+                    "• Admin arizangizni ko'rib chiqadi\n"
+                    "• Tasdiqlanganda fayl yuboriladi\n\n"
+                    "⏳ Iltimos, biroz kutib turing..."
                 )
-            except:
-                await callback.message.answer(
-                    "❌ Siz hali kanalga obuna bo'lmagansiz!\n\n"
-                    "📺 Iltimos, kanalga obuna bo'ling:\n"
-                    f"🔗 https://t.me/{CHANNEL_USERNAME}\n\n"
-                    "Obuna bo'lgach, qayta 'Obunani tekshirish' tugmasini bosing.",
-                    reply_markup=await get_channel_keyboard()
-                )
-            await callback.answer("❌ Obuna bo'lmagan", show_alert=True)
+                await callback.answer("📋 Ariza yuborildi!", show_alert=True)
+                
+            except Exception as e:
+                print(f"Ariza yuborish xatoligi: {e}")
+                # Agar ariza yuborib bo'lmasa, to'g'ridan-to'g'ri faylni yuboramiz
+                try:
+                    await bot.send_document(
+                        chat_id=callback.from_user.id,
+                        document="BAACAgUAAxkDAAICOGF6i2b3Jt8nG8kVjvY7K6r8AAKqCAAJfGxkS2kqL8X7Y9v8BA",
+                        caption="🎮 Grand Theft Auto V\n\n"
+                               "📥 Fayl muvaffaqiyatli yuklandi!\n"
+                               "🔧 O'yinni o'rnatish uchun arxivni oching.\n\n"
+                               "🎬 O'yinni o'rnatish bo'yicha video:\n"
+                               "🔗 https://youtu.be/ojvZgPs2YFo\n\n"
+                               "📋 **Eslatma:** Kanalga obuna bo'lishni unutmang!"
+                    )
+                    
+                    print(f"Fayl arizasiz yuborildi user {callback.from_user.id} ga")
+                    
+                    await callback.message.edit_text(
+                        "✅ Fayl yuborildi!\n\n"
+                        "📥 GTA 5 fayli muvaffaqiyatli yuklandi!\n\n"
+                        f"� **Eslatma:** Iltimos, {NEW_CHANNEL_USERNAME} kanaliga obuna bo'ling:\n"
+                        f"{NEW_CHANNEL_LINK}"
+                    )
+                    await callback.answer("✅ Fayl yuborildi!")
+                except Exception as direct_error:
+                    print(f"To'g'ridan-to'g'ri yuborish xatoligi: {direct_error}")
+                    await callback.message.edit_text(
+                        "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
+                        "🎮 **Nima qilish kerak:**\n"
+                        "• Qayta urinib ko'ring\n"
+                        "• Yoki admin bilan bog'laning\n\n"
+                        "📞 Admin tez orada muammoni hal qiladi."
+                    )
+                    await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             
     except Exception as e:
         print(f"Foydalanuvchini tekshirish xatoligi: {e}")
