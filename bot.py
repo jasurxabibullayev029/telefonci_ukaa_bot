@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8257079297:AAF9buIS7tBH0Nayk7I4RJ3g569hT9y5JBs"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8746729342:AAE-jhM_1mtfVUwrRnhljFX2jcOifkFZGhI"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
 CHANNEL_USERNAME = "telefonci_ukaa"
