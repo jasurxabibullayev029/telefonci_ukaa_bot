@@ -11,12 +11,13 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8746729342:AAGHRF02-qpYA0GzXwH77rPOeC8k4qE0kI8"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8257079297:AAF9buIS7tBH0Nayk7I4RJ3g569hT9y5JBs"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
 CHANNEL_USERNAME = "telefonci_ukaa"
-NEW_CHANNEL_USERNAME = "SWEET HOME🛍️"  # Yangi kanal uchun
-NEW_CHANNEL_LINK = "https://t.me/+rlvRV9gi0MUyMjYy"  # Taklif linki
+CHANNEL_LINK = "https://t.me/telefonci_ukaa"  # Birinchi kanal linki
+SECOND_CHANNEL_USERNAME = "iPhone_Lifee"  # Ikkinchi kanal nomi
+SECOND_CHANNEL_LINK = "https://t.me/iPhone_Lifee"  # Ikkinchi kanal linki
 
 # Admin Telegram user ID lari (@userinfobot orqali tekshiring)
 ADMIN_IDS = {1209491758}
@@ -33,9 +34,27 @@ dp = Dispatcher()
 # Kanalga obuna bo'lish tugmasi
 async def get_channel_keyboard():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📺 Kanalga obuna bo'lish", url=f"https://t.me/{CHANNEL_USERNAME}")],
-        [InlineKeyboardButton(text="🎬 SWEET HOME🛍️ ga obuna bo'lish", url=NEW_CHANNEL_LINK)],
+        [InlineKeyboardButton(text="📺 Telefonci Ukaa kanaliga obuna bo'lish", url=CHANNEL_LINK)],
+        [InlineKeyboardButton(text="📱 iPhone Life kanaliga obuna bo'lish", url=SECOND_CHANNEL_LINK)],
         [InlineKeyboardButton(text="✅ Obunani tekshirish", callback_data="check_subscription")]
+    ])
+    return keyboard
+
+# Doimiy reply keyboard (HELP button har doim ko'rinadi)
+async def get_main_keyboard():
+    keyboard = types.ReplyKeyboardMarkup(
+        keyboard=[
+            [types.KeyboardButton(text="ℹ️ HELP")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )
+    return keyboard
+
+# Help keyboard with admin contact button
+async def get_help_keyboard():
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="‍💻 Admin bilan bog'lanish", url="https://t.me/jasurdv")]
     ])
     return keyboard
 
@@ -160,6 +179,67 @@ async def approve_request_callback(callback: types.CallbackQuery):
     except Exception as e:
         print(f"Ariza qabul qilish xatoligi: {e}")
         await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
+
+# HELP callback handler
+@dp.callback_query(F.data == "help")
+async def help_callback(callback: types.CallbackQuery):
+    help_text = f"""
+ℹ️ **YORDAM**
+
+🤖 **Bot haqida ma'lumot:**
+Bu bot sizga turli xil o'yinlarni yuklab berish uchun xizmat qiladi.
+
+📱 **Admin bilan bog'lanish:**
+👤 Admin username: @jasurdv
+
+🆘 **Agar bot ishlamasa:**
+• Bot javob bermayotgan bo'lsa
+• Fayl yuklab bo'lmayotgan bo'lsa
+• Boshqa texnik muammolar bo'lsa
+
+📞 **Darhol admin bilan bog'laning:**
+@jasurdv ga yozing va muammoni tavsiflang!
+
+🙏 **Tashrifingiz uchun rahmat!**
+    """
+    
+    try:
+        await callback.message.edit_text(
+            help_text,
+            reply_markup=await get_channel_keyboard()
+        )
+    except:
+        await callback.message.answer(
+            help_text,
+            reply_markup=await get_channel_keyboard()
+        )
+    
+    await callback.answer("ℹ️ Yordam ko'rsatildi!", show_alert=True)
+
+# HELP button message handler
+@dp.message(F.text == "ℹ️ HELP")
+async def help_message_handler(message: Message):
+    help_text = f"""
+ℹ️ **YORDAM**
+
+🤖 **Bot haqida ma'lumot:**
+Bu bot sizga turli xil o'yinlarni yuklab berish uchun xizmat qiladi.
+
+🆘 **Agar bot ishlamasa:**
+• Bot javob bermayotgan bo'lsa
+• Fayl yuklab bo'lmayotgan bo'lsa
+• Boshqa texnik muammolar bo'lsa
+
+📞 **Yechim:**
+Pastdagi "Admin bilan bog'lanish" tugmasini bosing!
+
+🙏 **Tashrifingiz uchun rahmat!**
+    """
+    
+    await message.answer(
+        help_text,
+        reply_markup=await get_help_keyboard()
+    )
 
 # Fayl yuborish callback (admin uchun)
 @dp.callback_query(F.data.startswith("send_file_"))
@@ -310,6 +390,11 @@ async def start_command(message: Message):
                     "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.",
                     reply_markup=await get_gta_keyboard()
                 )
+                # Show reply keyboard with HELP button
+                await message.answer(
+                    "ℹ️ Yordam kerak bo'lsa, pastdagi HELP tugmasini bosing!",
+                    reply_markup=await get_main_keyboard()
+                )
                 return
     except:
         users = {}
@@ -332,6 +417,11 @@ async def start_command(message: Message):
         "🎮 Bu bot orqali siz turli xil o'yinlarni yuklab olishingiz mumkin.\n"
         "📥 Yuklashni boshlash uchun pastdagi tugmalarni bosing.",
         reply_markup=await get_gta_keyboard()
+    )
+    # Show reply keyboard with HELP button
+    await message.answer(
+        "ℹ️ Yordam kerak bo'lsa, pastdagi HELP tugmasini bosing!",
+        reply_markup=await get_main_keyboard()
     )
 
 # Yangi kanal uchun ariza komandasi
@@ -415,7 +505,7 @@ async def download_{game_name.lower().replace(' ', '_')}_callback(callback: type
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{{CHANNEL_USERNAME}}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{{CHANNEL_USERNAME_2}}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{{SECOND_CHANNEL_USERNAME}}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {{bot_info.status in ['administrator', 'creator']}}")
         print(f"Bot 2-kanalda admin: {{bot_info2.status in ['administrator', 'creator']}}")
@@ -429,7 +519,7 @@ async def download_{game_name.lower().replace(' ', '_')}_callback(callback: type
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\\n\\n"
                 "🔧 Yechim:\\n"
-                f"1. @{{CHANNEL_USERNAME}} va @{{CHANNEL_USERNAME_2}} kanallariga o'ting\\n"
+                f"1. @{{CHANNEL_USERNAME}} va @{{SECOND_CHANNEL_USERNAME}} kanallariga o'ting\\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\\n"
                 "3. 'Invite users via link' ruxsatini bering\\n\\n"
                 f"✅ Admin qilgach, qayta '{game_name}ni yuklash' tugmasini bosing.",
@@ -439,7 +529,7 @@ async def download_{game_name.lower().replace(' ', '_')}_callback(callback: type
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\\n\\n"
                 "🔧 Yechim:\\n"
-                f"1. @{{CHANNEL_USERNAME}} va @{{CHANNEL_USERNAME_2}} kanallariga o'ting\\n"
+                f"1. @{{CHANNEL_USERNAME}} va @{{SECOND_CHANNEL_USERNAME}} kanallariga o'ting\\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\\n"
                 "3. 'Invite users via link' ruxsatini bering\\n\\n"
                 f"✅ Admin qilgach, qayta '{game_name}ni yuklash' tugmasini bosing.",
@@ -455,7 +545,7 @@ async def download_{game_name.lower().replace(' ', '_')}_callback(callback: type
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{{CHANNEL_USERNAME_2}}",
+            chat_id=f"@{{SECOND_CHANNEL_USERNAME}}",
             user_id=callback.from_user.id
         )
         
@@ -963,7 +1053,7 @@ async def write_file_id_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -977,7 +1067,7 @@ async def write_file_id_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 "✅ Admin qilgach, qayta 'O'yinlarni yuklash' tugmasini bosing.",
@@ -987,7 +1077,7 @@ async def write_file_id_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 "✅ Admin qilgach, qayta 'O'yinlarni yuklash' tugmasini bosing.",
@@ -1003,7 +1093,7 @@ async def write_file_id_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1073,7 +1163,7 @@ async def download_mortal_kombat_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -1113,7 +1203,7 @@ async def download_mortal_kombat_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1293,11 +1383,11 @@ async def download_game_callback(callback: types.CallbackQuery):
             except Exception as file_error:
                 print(f"{game_name} faylini yuborish xatoligi: {file_error}")
                 await callback.message.edit_text(
-                    f"❌ {game_name} faylini yuklashda xatolik yuz berdi!\n\n"
-                    "🎮 **Nima qilish kerak:**\n"
-                    "• Qayta urinib ko'ring\n"
-                    "• Yoki admin bilan bog'laning\n\n"
-                    "� Admin tez orada muammoni hal qiladi."
+                    f"❌ {game_name} faylini olishda xatolik yuz berdi!\n\n"
+                    "🔄 **Nima qilish kerak:**\n"
+                    "• Boshidan /start tugmasini bosing\n"
+                    "• Faylni qayta yuklab olishga harakat qiling\n\n"
+                    "📥 Faylni olish uchun botni qayta ishga tushiring!"
                 )
                 await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             finally:
@@ -1416,19 +1506,19 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                     # Agar to'g'ridan-to'g'ri ham yuborib bo'lmasa
                     try:
                         await callback.message.edit_text(
-                            "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
-                            "🎮 **Nima qilish kerak:**\n"
-                            "• Qayta urinib ko'ring\n"
-                            "• Yoki admin bilan bog'laning\n\n"
-                            "� Admin tez orada muammoni hal qiladi."
+                            "❌ Faylni olishda xatolik yuz berdi!\n\n"
+                            "🔄 **Nima qilish kerak:**\n"
+                            "• Boshidan /start tugmasini bosing\n"
+                            "• Faylni qayta yuklab olishga harakat qiling\n\n"
+                            "📥 Faylni olish uchun botni qayta ishga tushiring!"
                         )
                     except:
                         await callback.message.answer(
-                            "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
-                            "🎮 **Nima qilish kerak:**\n"
-                            "• Qayta urinib ko'ring\n"
-                            "• Yoki admin bilan bog'laning\n\n"
-                            "� Admin tez orada muammoni hal qiladi."
+                            "❌ Faylni olishda xatolik yuz berdi!\n\n"
+                            "🔄 **Nima qilish kerak:**\n"
+                            "• Boshidan /start tugmasini bosing\n"
+                            "• Faylni qayta yuklab olishga harakat qiling\n\n"
+                            "📥 Faylni olish uchun botni qayta ishga tushiring!"
                         )
                     await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
         else:
@@ -1513,10 +1603,10 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                     print(f"To'g'ridan-to'g'ri yuborish xatoligi: {direct_error}")
                     await callback.message.edit_text(
                         "❌ Faylni yuklashda xatolik yuz berdi!\n\n"
-                        "🎮 **Nima qilish kerak:**\n"
-                        "• Qayta urinib ko'ring\n"
-                        "• Yoki admin bilan bog'laning\n\n"
-                        "📞 Admin tez orada muammoni hal qiladi."
+                        "🔄 **Nima qilish kerak:**\n"
+                        "• Boshidan /start tugmasini bosing\n"
+                        "• Faylni qayta yuklab olishga harakat qiling\n\n"
+                        "� Faylni olish uchun botni qayta ishga tushiring!"
                     )
                     await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             
@@ -1530,7 +1620,7 @@ async def download_forza_horizon_5_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -1570,7 +1660,7 @@ async def download_forza_horizon_5_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1586,7 +1676,7 @@ async def download_forza_horizon_5_callback(callback: types.CallbackQuery):
                 # Forza Horizon 5 faylini yuborish
                 await bot.send_document(
                     chat_id=callback.from_user.id,
-                    document="BQACAgIAAxkBAAICUGm-_C1asZ3VgwePfeSt0LBclhNlAAJllQACbqb5SaLvElWNu8hEOgQ",  # Forza Horizon 5.zip file_id111111111111111111111
+                    document="BQACAgIAAxkBAAIOSGnNUyM2PqlYacS6HhtW3txHPRBkAAJHXAACcr65Se-RPY_fIAgzOgQ",  # Forza Horizon 5.zip file_id111111111111111111111
                     caption="🏎 **Forza Horizon 5**\n\n"
                            "📥 Fayl muvaffaqiyatli yuklandi!\n"
                            "🔧 O'yinni o'rnatish uchun arxivni oching.\n\n"
@@ -1665,7 +1755,7 @@ async def download_gta_5_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -1679,7 +1769,7 @@ async def download_gta_5_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'GTA 5ni yuklash' tugmasini bosing.",
@@ -1689,7 +1779,7 @@ async def download_gta_5_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'GTA 5ni yuklash' tugmasini bosing.",
@@ -1705,7 +1795,7 @@ async def download_gta_5_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1772,7 +1862,7 @@ async def download_mortal_kombat_1_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -1786,7 +1876,7 @@ async def download_mortal_kombat_1_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'Mortal Kombat 1ni yuklash' tugmasini bosing.",
@@ -1796,7 +1886,7 @@ async def download_mortal_kombat_1_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'Mortal Kombat 1ni yuklash' tugmasini bosing.",
@@ -1812,7 +1902,7 @@ async def download_mortal_kombat_1_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1879,7 +1969,7 @@ async def download_gta_4_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -1893,7 +1983,7 @@ async def download_gta_4_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'GTA 4ni yuklash' tugmasini bosing.",
@@ -1903,7 +1993,7 @@ async def download_gta_4_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'GTA 4ni yuklash' tugmasini bosing.",
@@ -1919,7 +2009,7 @@ async def download_gta_4_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
@@ -1986,7 +2076,7 @@ async def download_need_for_speed_callback(callback: types.CallbackQuery):
     # Avval botning kanaldagi holatini tekshiramiz
     try:
         bot_info = await bot.get_chat_member(f"@{CHANNEL_USERNAME}", bot.id)
-        bot_info2 = await bot.get_chat_member(f"@{CHANNEL_USERNAME_2}", bot.id)
+        bot_info2 = await bot.get_chat_member(f"@{SECOND_CHANNEL_USERNAME}", bot.id)
         bot_is_admin = bot_info.status in ["administrator", "creator"] and bot_info2.status in ["administrator", "creator"]
         print(f"Bot 1-kanalda admin: {bot_info.status in ['administrator', 'creator']}")
         print(f"Bot 2-kanalda admin: {bot_info2.status in ['administrator', 'creator']}")
@@ -2000,7 +2090,7 @@ async def download_need_for_speed_callback(callback: types.CallbackQuery):
             await callback.message.edit_text(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'Need for speedni yuklash' tugmasini bosing.",
@@ -2010,7 +2100,7 @@ async def download_need_for_speed_callback(callback: types.CallbackQuery):
             await callback.message.answer(
                 "❌ Bot kanalga obunani tekshira olmaydi!\n\n"
                 "🔧 Yechim:\n"
-                f"1. @{CHANNEL_USERNAME} va @{CHANNEL_USERNAME_2} kanallariga o'ting\n"
+                f"1. @{CHANNEL_USERNAME} va @{SECOND_CHANNEL_USERNAME} kanallariga o'ting\n"
                 "2. Adminlar → Qo'shish → @Gta5_jasur_bot\n"
                 "3. 'Invite users via link' ruxsatini bering\n\n"
                 f"✅ Admin qilgach, qayta 'Need for speedni yuklash' tugmasini bosing.",
@@ -2026,7 +2116,7 @@ async def download_need_for_speed_callback(callback: types.CallbackQuery):
             user_id=callback.from_user.id
         )
         chat_member2 = await bot.get_chat_member(
-            chat_id=f"@{CHANNEL_USERNAME_2}",
+            chat_id=f"@{SECOND_CHANNEL_USERNAME}",
             user_id=callback.from_user.id
         )
         
