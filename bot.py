@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime
 
 # Bot tokeningizni shu yerga kiriting
-BOT_TOKEN = "8746729342:AAE-jhM_1mtfVUwrRnhljFX2jcOifkFZGhI"  # @BotFather dan olingan to'g'ri tokenni kiriting
+BOT_TOKEN = "8746729342:AAHKROEv2pfgu8t2VpbzWHHaqE0Z5ENUWhM"  # @BotFather dan olingan to'g'ri tokenni kiriting
 
 # Kanal username ( @ belgisiz )
 CHANNEL_USERNAME = "telefonci_ukaa"
@@ -1387,7 +1387,7 @@ async def download_game_callback(callback: types.CallbackQuery):
                     "🔄 **Nima qilish kerak:**\n"
                     "• Boshidan /start tugmasini bosing\n"
                     "• Faylni qayta yuklab olishga harakat qiling\n\n"
-                    "📥 Faylni olish uchun botni qayta ishga tushiring!"
+                    "📥 Faylni olish uchun /start tugmasini bosing!"
                 )
                 await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             finally:
@@ -1510,7 +1510,7 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                             "🔄 **Nima qilish kerak:**\n"
                             "• Boshidan /start tugmasini bosing\n"
                             "• Faylni qayta yuklab olishga harakat qiling\n\n"
-                            "📥 Faylni olish uchun botni qayta ishga tushiring!"
+                            "📥 Faylni olish uchun /start tugmasini bosing!"
                         )
                     except:
                         await callback.message.answer(
@@ -1518,7 +1518,7 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                             "🔄 **Nima qilish kerak:**\n"
                             "• Boshidan /start tugmasini bosing\n"
                             "• Faylni qayta yuklab olishga harakat qiling\n\n"
-                            "📥 Faylni olish uchun botni qayta ishga tushiring!"
+                            "📥 Faylni olish uchun /start tugmasini bosing!"
                         )
                     await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
         else:
@@ -1606,7 +1606,7 @@ async def check_subscription_callback(callback: types.CallbackQuery):
                         "🔄 **Nima qilish kerak:**\n"
                         "• Boshidan /start tugmasini bosing\n"
                         "• Faylni qayta yuklab olishga harakat qiling\n\n"
-                        "� Faylni olish uchun botni qayta ishga tushiring!"
+                        "📥 Faylni olish uchun /start tugmasini bosing!"
                     )
                     await callback.answer("❌ Yuklash xatoligi!", show_alert=True)
             
